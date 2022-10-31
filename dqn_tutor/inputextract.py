@@ -21,7 +21,6 @@ def get_cart_location(env, screen_width):
 def get_screen(env):
     # Returned screen requested by gym is 400x600x3, but is sometimes larger
     # such as 800x1200x3. Transpose it into torch order (CHW).
-    print(env, env.render())
     screen = env.render().transpose((2, 0, 1))
     # Cart is in the lower half, so strip off the top and bottom of the screen
     _, screen_height, screen_width = screen.shape

@@ -18,6 +18,8 @@ import torch.optim as optim
 # import torchvision.transforms as T
 
 from inputextract import get_screen
+from dqnmodule import DQN
+from replaymemory import ReplayMemory, Transition
 
 
 if gym.__version__ < "0.26":
@@ -27,6 +29,8 @@ if gym.__version__ < "0.26":
 else:
     env = gym.make("CartPole-v0", render_mode="rgb_array").unwrapped
 
+env.reset() # important to call before you do other stuff with env
+
 # set up matplotlib
 is_ipython = "inline" in matplotlib.get_backend()
 if is_ipython:
@@ -34,6 +38,7 @@ if is_ipython:
 
 plt.ion()
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # ========= Hyperparameters and utilities ================
 
@@ -172,8 +177,10 @@ def optimize_model():
     optimizer.step()
 
 
-num_episodes = 400
+num_episodes = 150
 for i_episode in range(num_episodes):
+    if i_episode % 10 == 0:
+        print("Episode: ", i_episode)
     # Initialize the environment and state
     env.reset()
     last_screen = get_screen(env)

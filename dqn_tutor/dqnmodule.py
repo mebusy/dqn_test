@@ -2,11 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# if gpu is to be used
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-print(device)
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class DQN(nn.Module):
     def __init__(self, h, w, outputs):
@@ -27,6 +23,7 @@ class DQN(nn.Module):
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
         linear_input_size = convw * convh * 32
         self.head = nn.Linear(linear_input_size, outputs)
+        
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
