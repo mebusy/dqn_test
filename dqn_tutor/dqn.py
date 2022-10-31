@@ -4,6 +4,7 @@ import random
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import os
 
 # from collections import namedtuple, deque
 from itertools import count
@@ -29,7 +30,7 @@ if gym.__version__ < "0.26":
 else:
     env = gym.make("CartPole-v0", render_mode="rgb_array").unwrapped
 
-env.reset() # important to call before you do other stuff with env
+env.reset()  # important to call before you do other stuff with env
 
 # set up matplotlib
 is_ipython = "inline" in matplotlib.get_backend()
@@ -38,7 +39,7 @@ if is_ipython:
 
 plt.ion()
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ========= Hyperparameters and utilities ================
 
@@ -48,6 +49,8 @@ EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 200
 TARGET_UPDATE = 10
+
+WEIGHT_PATH = "weights.pt"
 
 # Get screen size so that we can initialize layers correctly based on shape
 # returned from AI gym. Typical dimensions at this point are close to 3x40x90
@@ -60,6 +63,9 @@ n_actions = env.action_space.n
 
 policy_net = DQN(screen_height, screen_width, n_actions).to(device)
 target_net = DQN(screen_height, screen_width, n_actions).to(device)
+
+if os.path.exists(WEIGHT_PATH):
+    policy_net.load_state_dict(torch.load(WEIGHT_PATH))  # , map_location="cpu"
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
@@ -214,7 +220,13 @@ for i_episode in range(num_episodes):
             break
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
+        # save
+        torch.save(policy_net.state_dict(), WEIGHT_PATH)
+        # load
         target_net.load_state_dict(policy_net.state_dict())
+        # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference.
+        # Failing to do this will yield inconsistent inference results.
+        target_net.eval()
 
 print("Complete")
 env.render()
