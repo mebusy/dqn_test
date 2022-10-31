@@ -177,7 +177,7 @@ def optimize_model():
     optimizer.step()
 
 
-num_episodes = 150
+num_episodes = 500
 for i_episode in range(num_episodes):
     if i_episode % 10 == 0:
         print("Episode: ", i_episode)
