@@ -21,7 +21,11 @@ import torch.optim as optim
 from inputextract import get_screen
 from dqnmodule import DQN
 from replaymemory import ReplayMemory, Transition
-from utils import check_network_identical, check_network_weights_loaded
+from utils import (
+    check_network_identical,
+    check_network_weights_loaded,
+    estimate_training_time,
+)
 
 
 if gym.__version__ < "0.26":
@@ -41,7 +45,7 @@ if is_ipython:
 plt.ion()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f'device:', device)
+print(f"device:", device)
 
 # ========= Hyperparameters and utilities ================
 
@@ -50,7 +54,7 @@ GAMMA = 0.999
 EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 200
-TARGET_UPDATE = 10
+TARGET_UPDATE = 100  # important, too small may cause unstable
 
 WEIGHT_PATH = "weights.pt"
 IS_TRAINING = False
@@ -68,7 +72,7 @@ policy_net = DQN(screen_height, screen_width, n_actions).to(device)
 target_net = DQN(screen_height, screen_width, n_actions).to(device)
 
 if os.path.exists(WEIGHT_PATH):
-    print( "[info] find weights file, policy_net load weights" )
+    print("[info] find weights file, policy_net load weights")
     policy_net.load_state_dict(torch.load(WEIGHT_PATH, map_location="cpu"))
     EPS_START = EPS_END
 
@@ -91,11 +95,13 @@ steps_done = 0
 # The probability of choosing a random action will start at EPS_START and will
 #   decay exponentially towards EPS_END. EPS_DECAY controls the rate of the decay.
 def select_action(state):
-    global steps_done
+    global steps_done, train_info
     sample = random.random()
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
         -1.0 * steps_done / EPS_DECAY
     )
+    # train_info["eps_threshold"] = eps_threshold
+
     # print(eps_threshold, steps_done) # from EPS_START , decay to EPS_END
     steps_done += 1
     if sample > eps_threshold:
@@ -116,6 +122,8 @@ episode_durations = []
 #   along with an average over the last 100 episodes (the measure used in the official evaluations).
 # The plot will be underneath the cell containing the main training loop, and will update after every episode.
 def plot_durations():
+    global train_info
+
     plt.figure(2)
     plt.clf()
     durations_t = torch.tensor(episode_durations, dtype=torch.float)
@@ -127,7 +135,8 @@ def plot_durations():
     if len(durations_t) >= 100:
         means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
         if len(durations_t) % 10 == 0:
-            print('\tlatest 100 mean:', means[-1])
+            # print('\tlatest 100 mean:', means[-1])
+            train_info["latest mean"] = round(means[-1].item(), 2)
         means = torch.cat((torch.zeros(99), means))
         plt.plot(means.numpy())
 
@@ -197,9 +206,13 @@ def optimize_model():
 
 
 num_episodes = 10000
+
+train_info = {}
+
 for i_episode in range(num_episodes):
-    if i_episode % 10 == 0:
-        print("Episode: ", i_episode)
+    train_info["i_episode"] = i_episode
+    train_info["estimate time"] = estimate_training_time(i_episode, num_episodes)
+
     # Initialize the environment and state
     env.reset()
     last_screen = get_screen(env)
@@ -230,6 +243,11 @@ for i_episode in range(num_episodes):
         if done:
             episode_durations.append(t + 1)
             plot_durations()
+
+            if i_episode > 0 and i_episode % 10 == 0:
+                import json
+
+                print(json.dumps(train_info, sort_keys=True), end="\r")
             break
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
