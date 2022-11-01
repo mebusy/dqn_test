@@ -41,6 +41,7 @@ if is_ipython:
 plt.ion()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f'device:', device)
 
 # ========= Hyperparameters and utilities ================
 
@@ -125,7 +126,8 @@ def plot_durations():
     # Take 100 episode averages and plot them too
     if len(durations_t) >= 100:
         means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-        print(f'latest 100 mean:', means[-1])
+        if len(durations_t) % 10 == 0:
+            print('\tlatest 100 mean:', means[-1])
         means = torch.cat((torch.zeros(99), means))
         plt.plot(means.numpy())
 
@@ -194,7 +196,7 @@ def optimize_model():
     optimizer.step()
 
 
-num_episodes = 500
+num_episodes = 10000
 for i_episode in range(num_episodes):
     if i_episode % 10 == 0:
         print("Episode: ", i_episode)
