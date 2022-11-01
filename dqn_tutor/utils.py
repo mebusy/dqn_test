@@ -68,5 +68,5 @@ def estimate_training_time(i_episode, total_episode):
 
     _avg_epoch_time += (dt - _avg_epoch_time) / i_episode
 
-    remaing_training_time = (total_episode - i_episode) * _avg_epoch_time
+    remaing_training_time = int((total_episode - i_episode) * _avg_epoch_time)
     return str(datetime.timedelta(seconds=remaing_training_time))
