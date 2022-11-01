@@ -117,6 +117,7 @@ def select_action(state):
 
 
 episode_durations = []
+episode_loss = []
 
 # a helper for plotting the durations of episodes,
 #   along with an average over the last 100 episodes (the measure used in the official evaluations).
@@ -124,19 +125,20 @@ episode_durations = []
 def plot_durations():
     global train_info
 
+    durations_t = torch.tensor(episode_durations, dtype=torch.float)
+    loss_t = torch.tensor(episode_loss, dtype=torch.float)
+
     plt.figure(2)
     plt.clf()
-    durations_t = torch.tensor(episode_durations, dtype=torch.float)
     plt.title("Training...")
     plt.xlabel("Episode")
     plt.ylabel("Duration")
     plt.plot(durations_t.numpy())
+    plt.plot(loss_t.numpy())
     # Take 100 episode averages and plot them too
     if len(durations_t) >= 100:
         means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-        if len(durations_t) % 10 == 0:
-            # print('\tlatest 100 mean:', means[-1])
-            train_info["latest mean"] = round(means[-1].item(), 2)
+        train_info["latest mean"] = round(means[-1].item(), 2)
         means = torch.cat((torch.zeros(99), means))
         plt.plot(means.numpy())
 
@@ -157,7 +159,7 @@ def plot_durations():
 #   is updated with the policy network’s weights every so often.
 def optimize_model():
     if len(memory) < BATCH_SIZE:
-        return
+        return 0
     transitions = memory.sample(BATCH_SIZE)
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). This converts batch-array of Transitions
@@ -204,6 +206,8 @@ def optimize_model():
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
 
+    return loss
+
 
 num_episodes = 10000
 
@@ -218,6 +222,8 @@ for i_episode in range(num_episodes):
     last_screen = get_screen(env)
     current_screen = get_screen(env)
     state = current_screen - last_screen
+
+    epoch_loss = 0
     for t in count():
         # Select and perform an action
         action = select_action(state)
@@ -239,9 +245,13 @@ for i_episode in range(num_episodes):
         state = next_state
 
         # Perform one step of the optimization (on the policy network)
-        optimize_model()
+        epoch_loss += float(optimize_model())
         if done:
             episode_durations.append(t + 1)
+            episode_loss.append(epoch_loss / (t + 1))
+
+            train_info["latest loss"] = round(episode_loss[-1], 2)
+
             plot_durations()
 
             if i_episode > 0 and i_episode % 10 == 0:
