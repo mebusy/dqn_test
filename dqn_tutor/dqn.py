@@ -21,6 +21,7 @@ import torch.optim as optim
 from inputextract import get_screen
 from dqnmodule import DQN
 from replaymemory import ReplayMemory, Transition
+from utils import check_network_identical, check_network_weights_loaded
 
 
 if gym.__version__ < "0.26":
@@ -51,6 +52,7 @@ EPS_DECAY = 200
 TARGET_UPDATE = 10
 
 WEIGHT_PATH = "weights.pt"
+IS_TRAINING = False
 
 # Get screen size so that we can initialize layers correctly based on shape
 # returned from AI gym. Typical dimensions at this point are close to 3x40x90
@@ -65,9 +67,16 @@ policy_net = DQN(screen_height, screen_width, n_actions).to(device)
 target_net = DQN(screen_height, screen_width, n_actions).to(device)
 
 if os.path.exists(WEIGHT_PATH):
-    policy_net.load_state_dict(torch.load(WEIGHT_PATH))  # , map_location="cpu"
+    print( "[info] find weights file, policy_net load weights" )
+    policy_net.load_state_dict(torch.load(WEIGHT_PATH, map_location="cpu"))
+    EPS_START = EPS_END
+
+    assert check_network_weights_loaded(policy_net, WEIGHT_PATH)
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
+
+assert check_network_identical(policy_net, target_net)
+
 
 optimizer = optim.RMSprop(policy_net.parameters())
 memory = ReplayMemory(10000)
@@ -86,6 +95,7 @@ def select_action(state):
     eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
         -1.0 * steps_done / EPS_DECAY
     )
+    # print(eps_threshold, steps_done) # from EPS_START , decay to EPS_END
     steps_done += 1
     if sample > eps_threshold:
         with torch.no_grad():
@@ -227,6 +237,10 @@ for i_episode in range(num_episodes):
         # Remember that you must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference.
         # Failing to do this will yield inconsistent inference results.
         target_net.eval()
+
+        # assert check_network_identical(policy_net, target_net)
+        # assert check_network_weights_loaded(policy_net, WEIGHT_PATH)
+
 
 print("Complete")
 env.render()
