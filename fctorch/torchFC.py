@@ -1,7 +1,6 @@
 #!python3
 import torch
 import torch.nn as nn
-
 import torch.nn.functional as F
 import torch.optim as optim
 
@@ -111,3 +110,7 @@ optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, nester
 
 if __name__ == "__main__":
     train_part34(model, optimizer)
+
+    from utils import dumpModelParams
+
+    dumpModelParams(model)
