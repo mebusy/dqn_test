@@ -163,4 +163,5 @@ cython_debug/
 *.swp
 
 
+cifar-10-batches-py/
 
