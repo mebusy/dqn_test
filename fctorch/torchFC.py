@@ -47,6 +47,7 @@ def check_accuracy_part34(loader, model):
             x = x.to(device=device, dtype=dtype)  # move to device, e.g. GPU
             y = y.to(device=device, dtype=torch.long)
             scores = model(x)
+            # print(scores.shape)
             _, preds = scores.max(1)
             num_correct += (preds == y).sum()
             num_samples += preds.size(0)

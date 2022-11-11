@@ -30,3 +30,16 @@ loader_val = DataLoader(
     batch_size=64,
     sampler=sampler.SubsetRandomSampler(range(NUM_TRAIN, 50000)),
 )
+
+
+if __name__ == "__main__":
+    # print("cifar10_train: ", cifar10_train)
+    # print("loader_train: ", loader_train)
+    # print("cifar10_val: ", cifar10_val)
+    print("loader_val: ", loader_val)
+
+    for x, y in loader_val:
+        x = x.cpu().numpy()
+        y = y.cpu().numpy()
+        print("x: ", x)
+        print("y: ", y)
