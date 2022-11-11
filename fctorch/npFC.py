@@ -46,25 +46,7 @@ class TwoLayerNet(object):
 
         pass
 
-    def loss(self, X):
-        """
-        Compute loss and gradient for a minibatch of data.
-
-        Inputs:
-        - X: Array of input data of shape (N, d_1, ..., d_k)
-        - y: Array of labels, of shape (N,). y[i] gives the label for X[i].
-
-        Returns:
-        If y is None, then run a test-time forward pass of the model and return:
-        - scores: Array of shape (N, C) giving classification scores, where
-          scores[i, c] is the classification score for X[i] and class c.
-
-        If y is not None, then run a training-time forward and backward pass and
-        return a tuple of:
-        - loss: Scalar value giving the loss
-        - grads: Dictionary with the same keys as self.params, mapping parameter
-          names to gradients of the loss with respect to those parameters.
-        """
+    def forward(self, X):
         scores = None
 
         _scores1, cache1 = affine_relu_forward(X, self.params["W1"], self.params["b1"])
@@ -74,13 +56,11 @@ class TwoLayerNet(object):
         return scores
 
 
-# -------------------------- main -------------------------------------------
-
-if __name__ == "__main__":
+def loadTorchWeights(dir_params):
     import os
 
     # load trained pytorch weights
-    weight_files = sorted([f for f in os.listdir("./params") if f.endswith(".np")])
+    weight_files = sorted([f for f in os.listdir(dir_params) if f.endswith(".np")])
     params = {}
     for layer in range(2):
         for f in weight_files[layer * 2 : layer * 2 + 2]:
@@ -93,6 +73,14 @@ if __name__ == "__main__":
             else:
                 raise ValueError("missing weight file")
 
+    return params
+
+
+# -------------------------- main -------------------------------------------
+
+if __name__ == "__main__":
+
+    params = loadTorchWeights("./params")
     # print(params.items())
     # print("params loaded:", {k: v.shape for k, v in params.items()})
 
@@ -103,6 +91,6 @@ if __name__ == "__main__":
 
     # test
     net = TwoLayerNet(params=params)
-    scores = net.loss(np.random.randn(2, 3, 32, 32))
+    scores = net.forward(np.random.randn(2, 3, 32, 32))
     print(scores)
     pass
