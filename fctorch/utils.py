@@ -11,4 +11,7 @@ def dumpModelParams(model):
         path = os.path.join(out_params, name + ".np")
         # torch.save(param, path)
         with open(path, "wb") as fp:
-            np.save(fp, param.data.cpu().numpy())
+            print("saveing:", name, param.shape)
+            np_data = param.data.cpu().numpy()
+            np.save(fp, np_data)
+            print("    to numpy:", np_data.shape)
