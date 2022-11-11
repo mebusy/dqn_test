@@ -32,34 +32,17 @@ class TwoLayerNet(object):
     Architecure:  affine - relu - affine - softmax.
     """
 
-    def __init__(
-        self,
-        input_dim=3 * 32 * 32,
-        hidden_dim=100,
-        num_classes=10,
-        weight_scale=1e-3,
-        reg=0.0,
-    ):
+    def __init__(self, params=None):
         """
         Initialize a new network.
 
         Inputs:
-        - input_dim: An integer giving the size of the input
-        - hidden_dim: An integer giving the size of the hidden layer
-        - num_classes: An integer giving the number of classes to classify
-        - weight_scale: Scalar giving the standard deviation for random
-          initialization of the weights.
-        - reg: Scalar giving L2 regularization strength.
+        - param: An integer giving the number of classes to classify
         """
-        self.params = {}
-        self.reg = reg
+        if params is None:
+            raise ValueError("Params is None")
 
-        # std = weight_scale.  PS. NOT variance
-        self.params["W1"] = np.random.randn(input_dim, hidden_dim) * weight_scale
-        self.params["W2"] = np.random.randn(hidden_dim, num_classes) * weight_scale
-
-        self.params["b1"] = np.zeros(hidden_dim)
-        self.params["b2"] = np.zeros(num_classes)
+        self.params = params
 
         pass
 
@@ -96,6 +79,7 @@ class TwoLayerNet(object):
 if __name__ == "__main__":
     import os
 
+    # load trained pytorch weights
     weight_files = sorted([f for f in os.listdir("./params") if f.endswith(".np")])
     params = {}
     for layer in range(2):
@@ -104,14 +88,21 @@ if __name__ == "__main__":
             if f.find(".bias") != -1:
                 params[f"b{layer+1}"] = np.load("./params/" + f)
             elif f.find(".weight") != -1:
-                params[f"w{layer+1}"] = np.load("./params/" + f)
+                # transpose to match our FCnet
+                params[f"W{layer+1}"] = np.load("./params/" + f).T
             else:
                 raise ValueError("missing weight file")
 
     # print(params.items())
-    print("params loaded:", {k: v.shape for k, v in params.items()})
+    # print("params loaded:", {k: v.shape for k, v in params.items()})
 
-    net = TwoLayerNet(input_dim=3 * 32 * 32, hidden_dim=100, num_classes=10)
+    # note, those commented code are not transposed
+    # H, D = params["W1"].shape
+    # C = params["b2"].shape[0]
+    # net = TwoLayerNet(input_dim=D, hidden_dim=H, num_classes=C)
+
+    # test
+    net = TwoLayerNet(params=params)
     scores = net.loss(np.random.randn(2, 3, 32, 32))
     print(scores)
     pass
