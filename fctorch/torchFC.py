@@ -47,6 +47,7 @@ def check_accuracy_part34(loader, model):
             y = y.to(device=device, dtype=torch.long)
             scores = model(x)
             # print(scores.shape)
+            # max return a tuple: ( scores, indcies )
             _, preds = scores.max(1)
             num_correct += (preds == y).sum()
             num_samples += preds.size(0)
