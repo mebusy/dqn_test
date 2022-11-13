@@ -19,8 +19,6 @@ import torch.optim as optim
 # import torch.nn.functional as F
 # import torchvision.transforms as T
 
-from inputextract import get_screen
-from dqnmodule import DQN
 from replaymemory import ReplayMemory, Transition
 from utils import (
     check_network_identical,
@@ -28,6 +26,12 @@ from utils import (
     estimate_training_time,
 )
 
+# --------------------------------------------
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")
+
+# --------------------------------------------
 
 if gym.__version__ < "0.26":
     env = gym.make(
@@ -38,15 +42,6 @@ else:
 
 env.reset()  # important to call before you do other stuff with env
 
-# set up matplotlib
-is_ipython = "inline" in matplotlib.get_backend()
-if is_ipython:
-    from IPython import display
-
-plt.ion()
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"device: {device}")
 
 # ========= Hyperparameters and utilities ================
 
@@ -60,27 +55,32 @@ TARGET_UPDATE = 100  # important, too small may cause unstable
 WEIGHT_PATH = "weights.pt"
 IS_TRAINING = False
 
-# Get screen size so that we can initialize layers correctly based on shape
-# returned from AI gym. Typical dimensions at this point are close to 3x40x90
-# which is the result of a clamped and down-scaled render buffer in get_screen()
-init_screen = get_screen(env)
-_, _, screen_height, screen_width = init_screen.shape
 
 # Get number of actions from gym action space
 n_actions = env.action_space.n
 
-policy_net = DQN(screen_height, screen_width, n_actions).to(device)
-target_net = DQN(screen_height, screen_width, n_actions).to(device)
+hidden_layer_size = 1024
+
+for i in range(2):
+    model = nn.Sequential(
+        nn.Linear(4, hidden_layer_size),
+        nn.ReLU(),
+        nn.Linear(hidden_layer_size, n_actions),
+    )
+    if i == 0:
+        policy_net = model
+    else:
+        target_net = model
+
 
 if os.path.exists(WEIGHT_PATH):
     print("[info] find weights file, policy_net load weights")
     policy_net.load_state_dict(torch.load(WEIGHT_PATH, map_location="cpu"))
     EPS_START = EPS_END
-
     assert check_network_weights_loaded(policy_net, WEIGHT_PATH)
+
 target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
-
 assert check_network_identical(policy_net, target_net)
 
 
@@ -146,9 +146,6 @@ def plot_durations():
         plt.plot(means.numpy())
 
     plt.pause(0.001)  # pause a bit so that plots are updated
-    if is_ipython:
-        display.clear_output(wait=True)
-        display.display(plt.gcf())
 
 
 # ============= TRAINING LOOP ====================
@@ -213,33 +210,32 @@ def optimize_model():
     return loss
 
 
-num_episodes = 10000
+num_episodes = 1000
 
 train_info = {}
+
+
+def getState(obs):
+    return torch.from_numpy(obs).unsqueeze(0)
+
 
 for i_episode in range(num_episodes):
     train_info["i_episode"] = i_episode
     train_info["estimate time"] = estimate_training_time(i_episode, num_episodes)
 
     # Initialize the environment and state
-    env.reset()
-    last_screen = get_screen(env)
-    current_screen = get_screen(env)
-    state = current_screen - last_screen
+    obs, info = env.reset()
+    state = getState(obs)
 
     epoch_loss = 0
     for t in count():
         # Select and perform an action
         action = select_action(state)
-        _, reward, done, _, _ = env.step(action.item())
+        next_obs, reward, done, _, _ = env.step(action.item())
         reward = torch.tensor([reward], device=device)
 
-        # Observe new state
-        last_screen = current_screen
-        current_screen = get_screen(env)
-        if not done:
-            next_state = current_screen - last_screen
-        else:
+        next_state = getState(next_obs)
+        if done:
             next_state = None
 
         # Store the transition in memory
