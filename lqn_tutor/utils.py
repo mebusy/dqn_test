@@ -2,6 +2,18 @@ from hashlib import md5
 from io import BytesIO
 import torch
 import time
+import numpy as np
+
+
+class LinearSchedule(object):
+    def __init__(self, eps_begin, eps_end, nsteps):
+        self.epsilon = eps_begin
+        self.eps_begin = eps_begin
+        self.eps_end = eps_end
+        self.nsteps = nsteps
+
+    def update(self, t):
+        self.epsilon = np.interp(t, [0, self.nsteps], [self.eps_begin, self.eps_end])
 
 
 def check_network_identical(network1, network2):
