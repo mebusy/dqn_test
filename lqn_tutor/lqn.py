@@ -27,6 +27,7 @@ from utils import (
     check_network_weights_loaded,
     estimate_training_time,
 )
+from torchsummary import summary
 
 # --------------------------------------------
 
@@ -72,6 +73,7 @@ for i in range(2):
         policy_net = model
     else:
         target_net = model
+        summary(model, (4,), batch_size=BATCH_SIZE, device=device)
 
 
 if os.path.exists(WEIGHT_PATH):
