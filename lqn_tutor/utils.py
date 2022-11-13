@@ -16,6 +16,19 @@ class LinearSchedule(object):
         self.epsilon = np.interp(t, [0, self.nsteps], [self.eps_begin, self.eps_end])
 
 
+def np2torch(x, device, cast_double_to_float=True):
+    """
+    Utility function that accepts a numpy array and does the following:
+        1. Convert to torch tensor
+        2. Move it to the GPU (if CUDA is available)
+        3. Optionally casts float64 to float32 (torch is picky about types)
+    """
+    x = torch.from_numpy(x).to(device)
+    if cast_double_to_float and x.dtype is torch.float64:
+        x = x.float()
+    return x
+
+
 def check_network_identical(network1, network2):
     """Check if two networks are identical.
 

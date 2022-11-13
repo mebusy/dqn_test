@@ -22,6 +22,7 @@ import torch.optim as optim
 from replaymemory import ReplayMemory, Transition
 from utils import (
     LinearSchedule,
+    np2torch,
     check_network_identical,
     check_network_weights_loaded,
     estimate_training_time,
@@ -212,7 +213,7 @@ train_info = {}
 
 
 def getState(obs):
-    return torch.from_numpy(obs).unsqueeze(0)
+    return np2torch(obs, device).unsqueeze(0)
 
 
 # lr_schedule = LinearSchedule(config.lr_begin, config.lr_end, config.lr_nsteps)
