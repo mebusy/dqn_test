@@ -45,7 +45,7 @@ env.reset()  # important to call before you do other stuff with env
 BATCH_SIZE = 512
 
 GAMMA = 0.99
-TARGET_UPDATE = 100  # important, too small may cause unstable
+TARGET_UPDATE = 50  # important, too small may cause unstable
 
 WEIGHT_PATH = "weights.pt"
 
@@ -53,7 +53,7 @@ WEIGHT_PATH = "weights.pt"
 # Get number of actions from gym action space
 n_actions = env.action_space.n
 
-hidden_layer_size = 1024
+hidden_layer_size = 512
 
 for i in range(2):
     model = nn.Sequential(
