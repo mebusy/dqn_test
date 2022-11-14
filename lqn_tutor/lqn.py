@@ -1,11 +1,9 @@
 import os
 
-# from collections import namedtuple, deque
 from itertools import count
 
 import gym
 
-# import matplotlib
 import matplotlib.pyplot as plt
 
 # import math
@@ -23,12 +21,6 @@ from utils import (
     estimate_training_time,
     np2torch,
 )
-
-# from PIL import Image
-
-
-# import torch.nn.functional as F
-# import torchvision.transforms as T
 
 
 # --------------------------------------------
@@ -51,10 +43,8 @@ env.reset()  # important to call before you do other stuff with env
 # ========= Hyperparameters and utilities ================
 
 BATCH_SIZE = 128
-GAMMA = 0.999
-EPS_START = 0.5
-EPS_END = 0.05
-EPS_DECAY = 200
+
+GAMMA = 0.99
 TARGET_UPDATE = 100  # important, too small may cause unstable
 
 WEIGHT_PATH = "weights.pt"
@@ -95,15 +85,9 @@ memory = ReplayMemory(10000)
 # will select an action accordingly to an epsilon greedy policy.
 # Simply put, we’ll sometimes use our model for choosing the action,
 #   and sometimes we’ll just sample one uniformly.
-# The probability of choosing a random action will start at EPS_START and will
-#   decay exponentially towards EPS_END. EPS_DECAY controls the rate of the decay.
 def select_action(state, t):
-    # eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(
-    #     -1.0 * steps_done / EPS_DECAY
-    # )
     eps_threshold = eps_schedule.epsilon
 
-    # print(eps_threshold, steps_done) # from EPS_START , decay to EPS_END
     if np.random.random() > eps_threshold:
         with torch.no_grad():
             # t.max(1) will return largest column value of each row.
@@ -218,6 +202,11 @@ def optimize_model():
     loss.backward()
     for param in policy_net.parameters():
         param.grad.data.clamp_(-1, 1)
+
+    # add by mebusy
+    for group in optimizer.param_groups:
+        group["lr"] = lr_schedule.epsilon
+
     optimizer.step()
 
     return loss
@@ -234,8 +223,8 @@ def getState(obs):
     return np2torch(obs, device).unsqueeze(0)
 
 
-# lr_schedule = LinearSchedule(config.lr_begin, config.lr_end, config.lr_nsteps)
-eps_schedule = LinearSchedule(EPS_START, EPS_END, num_episodes // 2)
+lr_schedule = LinearSchedule(1e-2, 1e-4, num_episodes)
+eps_schedule = LinearSchedule(0.5, 0.05, num_episodes)
 
 for i_episode in range(num_episodes):
     train_info["i_episode"] = i_episode
@@ -279,6 +268,7 @@ for i_episode in range(num_episodes):
             break
 
     eps_schedule.update(i_episode)
+    lr_schedule.update(i_episode)
 
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
