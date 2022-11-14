@@ -180,21 +180,16 @@ def optimize_model():
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
-    # torch.gather(dim, index) 的理解
-    #     index=[ [x1,x2,x2],
-    #     [y1,y2,y2],
-    #     [z1,z2,z3] ]
-    #
-    #     如果dim=0
-    #     填入方式
-    #     [[(x1,0),(x2,1),(x3,2)]
-    #      [(y1,0),(y2,1),(y3,2)]
-    #      [(z1,0),(z2,1),(z3,2)] ]
-    #
-    #     如果dim=1
-    #     [[(0,x1),(0,x2),(0,x3)]
-    #      [(1,y1),(1,y2),(1,y3)]
-    #      [(2,z1),(2,z2),(2,z3)] ]
+    # torch.gather(dim, index)  : Gathers values along an axis specified by dim.
+    #     out[i][j][k] = input[index[i][j][k]][j][k]  # if dim == 0
+    #     out[i][j][k] = input[i][index[i][j][k]][k]  # if dim == 1
+    #     out[i][j][k] = input[i][j][index[i][j][k]]  # if dim == 2
+    # 就是将dim维度的索引改成index，其他不变
+    # example:
+    # >>> t = torch.tensor([[1, 2], [3, 4]])
+    # >>> torch.gather(t, 1, torch.tensor([[0, 0], [1, 0]]))
+    # tensor([[ 1,  1],   # t[0][1] = t[0][ index[0][1] ] = t[0][0] = 1
+    #         [ 4,  3]])  # t[1][0] = t[1][ index[1][0] ] = t[1][1] = 4, t[1][1] = t[1][ index[1][1] ] = t[1][0] = 3
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
