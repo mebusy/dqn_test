@@ -68,7 +68,7 @@ for i in range(2):
         nn.Linear(4, hidden_layer_size),
         nn.ReLU(),
         nn.Linear(hidden_layer_size, n_actions),
-    )
+    ).to(device)
     if i == 0:
         policy_net = model
     else:
