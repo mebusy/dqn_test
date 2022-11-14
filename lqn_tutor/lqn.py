@@ -42,7 +42,7 @@ env.reset()  # important to call before you do other stuff with env
 
 # ========= Hyperparameters and utilities ================
 
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 
 GAMMA = 0.99
 TARGET_UPDATE = 100  # important, too small may cause unstable
