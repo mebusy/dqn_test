@@ -1,33 +1,35 @@
-import gym
-
-# import math
-import numpy as np
-
-# import matplotlib
-import matplotlib.pyplot as plt
 import os
 
 # from collections import namedtuple, deque
 from itertools import count
 
-# from PIL import Image
+import gym
 
+# import matplotlib
+import matplotlib.pyplot as plt
+
+# import math
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# import torch.nn.functional as F
-# import torchvision.transforms as T
-
 from replaymemory import ReplayMemory, Transition
+from torchsummary import summary
 from utils import (
     LinearSchedule,
-    np2torch,
     check_network_identical,
     check_network_weights_loaded,
     estimate_training_time,
+    np2torch,
 )
-from torchsummary import summary
+
+# from PIL import Image
+
+
+# import torch.nn.functional as F
+# import torchvision.transforms as T
+
 
 # --------------------------------------------
 
@@ -178,6 +180,21 @@ def optimize_model():
     action_batch = torch.cat(batch.action)
     reward_batch = torch.cat(batch.reward)
 
+    # torch.gather(dim, index) 的理解
+    #     index=[ [x1,x2,x2],
+    #     [y1,y2,y2],
+    #     [z1,z2,z3] ]
+    #
+    #     如果dim=0
+    #     填入方式
+    #     [[(x1,0),(x2,1),(x3,2)]
+    #      [(y1,0),(y2,1),(y3,2)]
+    #      [(z1,0),(z2,1),(z3,2)] ]
+    #
+    #     如果dim=1
+    #     [[(0,x1),(0,x2),(0,x3)]
+    #      [(1,y1),(1,y2),(1,y3)]
+    #      [(2,z1),(2,z2),(2,z3)] ]
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
@@ -197,6 +214,8 @@ def optimize_model():
 
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
+    # unsqueeze(dim),  e.g. (4, 2) -> unsqueeze(1) -> (4, 2, 1)
+    # Returns a new tensor with a dimension of size one inserted at the specified position
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 
     # Optimize the model
@@ -215,6 +234,8 @@ train_info = {}
 
 
 def getState(obs):
+    # unsqueeze(dim),  e.g. (4, 2) -> unsqueeze(0) -> (1, 4, 2)
+    # Returns a new tensor with a dimension of size one inserted at the specified position
     return np2torch(obs, device).unsqueeze(0)
 
 
