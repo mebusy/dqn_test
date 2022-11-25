@@ -1,9 +1,7 @@
 import os
-
 from itertools import count
 
 import gym
-
 import matplotlib.pyplot as plt
 
 # import math
@@ -21,7 +19,6 @@ from utils import (
     estimate_training_time,
     np2torch,
 )
-
 
 # --------------------------------------------
 
@@ -273,7 +270,7 @@ for i_episode in range(num_episodes):
     # Update the target network, copying all weights and biases in DQN
     if i_episode % TARGET_UPDATE == 0:
         # save
-        torch.save(policy_net.state_dict(), WEIGHT_PATH)
+        # torch.save(policy_net.state_dict(), WEIGHT_PATH)
         # load
         target_net.load_state_dict(policy_net.state_dict())
         # Remember that you must call model.eval() to set dropout and batch normalization layers to
@@ -289,4 +286,10 @@ print("Complete")
 env.render()
 env.close()
 plt.ioff()
-plt.show()
+# plt.show()
+
+# =================================================================================================
+
+from fcutils import dumpModelParams
+
+dumpModelParams(model)
